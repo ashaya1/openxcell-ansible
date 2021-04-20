@@ -1,0 +1,7 @@
+---
+
+- name: Install Nginx And Configure With ReactJS App From Scratch
+  hosts: all
+  become: yes
+  roles:
+    - role: nginx

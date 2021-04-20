@@ -1,0 +1,52 @@
+---
+
+- name: Install nginx
+  apt: name=nginx state=present
+
+- name: Copy nginx configuration 
+  template: src={{ project_name }}.conf dest=/etc/nginx/conf.d/
+
+- name: Commenting default nginx configuration 
+  lineinfile:
+    path: /etc/nginx/nginx.conf
+    regexp: 'include.*sites-enabled'
+    line: '#'
+
+- name: First check the configuration then restart service
+  shell: /usr/sbin/nginx -t
+  register: test_nginx_config
+  changed_when: False
+  ignore_errors: True
+  notify: restart nginx
+
+- name: Read-write git checkout from github
+  git:
+    repo: 'https://github.com/ashaya1/react.git'
+    dest: "/tmp/{{project_name}}"
+
+- name: Install nvm
+  shell: >
+    curl https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash
+    creates='{{ ansible_env.HOME }}/.nvm/nvm.sh'
+
+- name: Install Node.js
+  shell: ". {{ ansible_env.HOME }}/.nvm/nvm.sh && nvm install v12.22.1 && nvm use v12.22.1"
+  args:
+    executable: /bin/bash
+  ignore_errors: True
+  changed_when: False
+
+- name: Build package
+  shell: |
+    cd "/tmp/{{ project_name }}"
+    source "{{ ansible_env.HOME }}/.nvm/nvm.sh"
+    npm config set user 0
+    npm config set unsafe-perm true
+    npm install --silent
+    npm run-script build
+    rsync -r build/* "/var/www/html/{{project_name}}/"
+  args:
+    executable: /bin/bash
+  ignore_errors: True
+  changed_when: False
+    #when: npm_comp.changed

@@ -1,0 +1,7 @@
+---
+
+# This is used for the nginx server configuration, but access to the
+# React site is not restricted by a named host.
+project_name: app
+server_ip: "{{ ansible_ssh_host }}"
+server_hostname: "{{ project_name }}.{{ server_ip }}.nip.io"
